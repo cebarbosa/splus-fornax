@@ -28,7 +28,7 @@ import context
 
 warnings.simplefilter('ignore', category=FITSFixedWarning)
 
-def stamps_fcc(redo=False, size0=64):
+def stamps_fcc(redo=False, size0=256, make_large=False):
     """ Produces stamps for sample of galaxies in the FCC (Ferguson+ 1990). """
     header_keys = ["OBJECT", "FILTER", "EXPTIME", "GAIN", "TELESCOP",
                    "INSTRUME", "AIRMASS"]
@@ -69,9 +69,11 @@ def stamps_fcc(redo=False, size0=64):
                 for i, c in enumerate(tqdm(cat, desc="Galaxies", leave=False,
                                  position=3)):
                     sizes = [size0]
-                    size_pix = int(1.2 * c["Major Axis"] / context.ps.value) + 1
-                    if size_pix > size0:
-                        sizes.append(size_pix)
+                    if make_large:
+                        size_pix = 1 + \
+                                   int(1.2 * c["Major Axis"] / context.ps.value)
+                        if size_pix > size0:
+                            sizes.append(size_pix)
                     for size in sizes:
                         galdir = os.path.join(outdir, c["Object"])
                         output = os.path.join(galdir,
