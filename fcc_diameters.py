@@ -56,4 +56,5 @@ def query_size(gal):
     return 0 * u.arcsec
 
 if __name__ == "__main__":
+
     fcc_diameters()
