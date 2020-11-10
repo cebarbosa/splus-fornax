@@ -61,3 +61,5 @@ plt.rcParams["xtick.minor.visible"] = True
 plt.rcParams["ytick.minor.visible"] = True
 plt.rcParams["xtick.top"] = True
 plt.rcParams["ytick.right"] = True
+
+_path = os.path.dirname(os.path.abspath(__file__))
