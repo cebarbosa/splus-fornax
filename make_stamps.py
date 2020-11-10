@@ -71,8 +71,7 @@ def make_stamps_jype(names, coords, sizes, outdir=None, redo=False,
     bands = context.bands if bands is None else bands
     ############################################################################
     # Selecting tiles from S-PLUS footprint
-    _path = os.path.dirname(os.path.abspath(__file__))
-    fields = Table.read(os.path.join(_path, "data",
+    fields = Table.read(os.path.join(context._path, "data",
                                      "all_tiles_final.csv"))
     field_coords =  SkyCoord(fields["RA"], fields["DEC"],
                                 unit=(u.hourangle, u.degree))
@@ -154,9 +153,13 @@ def make_stamps_lsb_idr3():
     names = np.array([_[7:19].strip() for _ in data])
     ras = np.array([float(_[22:30]) for _ in data]) * u.degree
     decs = np.array([float(_[31:38])  for _ in data]) * u.degree
+    res = np.array([float(_[74:80])  for _ in data])
+    sizes = np.floor(1 + 2 * 6 * res / context.ps.value)
     coords = SkyCoord(ras, decs)
-    sizes = np.full(len(names), 256)
-    outdir = outdir = os.path.join(context.data_dir, "FDS_LSB")
+    wdir = os.path.join(context.data_dir, "FDS_LSB")
+    if not os.path.exists(wdir):
+        os.mkdir(wdir)
+    outdir = os.path.join(wdir, "cutouts")
     if not os.path.exists(outdir):
         os.mkdir(outdir)
     make_stamps_jype(names, coords, sizes, outdir=outdir, redo=True)
