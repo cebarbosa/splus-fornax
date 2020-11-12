@@ -160,7 +160,7 @@ def make_stamps_fcc():
     fcc_coords = SkyCoord(ras, decs, unit=(u.degree, u.degree))
     make_stamps_jype(fcc_names, fcc_coords, sizes, outdir=outdir)
 
-def make_stamps_FDS_lsb():
+def make_stamps_FDS_lsb(n_res=10):
     catname = os.path.join(context.tables_dir, "Venhola2017_FDS_LSB.dat")
     with open(catname) as f:
         data = f.readlines()
@@ -169,7 +169,7 @@ def make_stamps_FDS_lsb():
     ras = np.array([float(_[22:30]) for _ in data]) * u.degree
     decs = np.array([float(_[31:38])  for _ in data]) * u.degree
     res = np.array([float(_[74:80])  for _ in data])
-    sizes = (np.floor(1 + 2 * 6 * res / context.ps.value)).astype(np.int)
+    sizes = (np.floor(1 + 2 * n_res * res / context.ps.value)).astype(np.int)
     coords = SkyCoord(ras, decs)
     wdir = os.path.join(context.data_dir, "FDS_LSB")
     if not os.path.exists(wdir):
@@ -211,8 +211,22 @@ def make_stamps_FDS_dwarfs_idr3():
         os.mkdir(outdir)
     make_stamps_jype(names, coords, sizes, outdir=outdir, redo=True)
 
+def make_sample_patricia():
+    catname = os.path.join(context.tables_dir, "GALAXIAS_SPLUS_TESTES.txt")
+    tab = Table.read(catname, format="ascii.csv")
+    names = [_.replace(" ", "") for _ in tab["Nome"]]
+    coords = SkyCoord(tab["RA"], tab["DEC"], unit=u.degree)
+    sizes = np.full(len(names), 256).astype(np.int)
+    wdir = os.path.join(context.data_dir, "patricia")
+    outdir = os.path.join(wdir, "cutouts")
+    for _dir in [wdir, outdir]:
+        if not os.path.exists(_dir):
+            os.mkdir(_dir)
+    make_stamps_jype(names, coords, sizes, outdir=outdir)
+    
 if __name__ == "__main__":
-    make_stamps_fcc()
-    make_stamps_FDS_lsb()
+    # make_stamps_fcc()
+    # make_stamps_FDS_lsb()
     # make_stamps_11HUGS()
     # make_stamps_FDS_dwarfs_idr3()
+    make_sample_patricia()

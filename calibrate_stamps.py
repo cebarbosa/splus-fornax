@@ -35,27 +35,29 @@ def get_zp_correction():
         zpcorr[band] = RectBivariateSpline(xgrid, xgrid, corr)
     return zpcorr
 
-def calibrate_FDS_LSB():
+def calibrate_samples():
+    samples = ["FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS"]
     comment = "Magnitude zero point"
     zps = get_zps()
     zpcorr = get_zp_correction()
-    wdir = os.path.join(context.data_dir, "FDS_LSB")
-    galaxies = sorted(os.listdir(wdir))
-    desc = "Calibrating galaxies"
-    for galaxy in tqdm(galaxies, desc=desc):
-        galdir = os.path.join(wdir, galaxy)
-        stamps = sorted([_ for _ in os.listdir(galdir) if _.endswith(".fits")])
-        for stamp in stamps:
-            filename = os.path.join(galdir, stamp)
-            h = fits.getheader(filename, ext=1)
-            tile = h["TILE"]
-            filtername = h["FILTER"]
-            idx = np.where((zps["FIELD"]==tile))[0]
-            zp0 = zps[idx][filtername].data[0]
-            x0 = h["X0TILE"]
-            y0 = h["Y0TILE"]
-            zp = round(zp0 + zpcorr[filtername](x0, y0)[0][0], 5)
-            fits.setval(filename, "MAGZP", value=zp, comment=comment, ext=1)
+    for sample in samples:
+        wdir = os.path.join(context.data_dir, sample, "cutouts")
+        galaxies = sorted(os.listdir(wdir))
+        desc = "Calibrating galaxies"
+        for galaxy in tqdm(galaxies, desc=desc):
+            galdir = os.path.join(wdir, galaxy)
+            stamps = sorted([_ for _ in os.listdir(galdir) if _.endswith(".fits")])
+            for stamp in stamps:
+                filename = os.path.join(galdir, stamp)
+                h = fits.getheader(filename, ext=1)
+                tile = h["TILE"]
+                filtername = h["FILTER"]
+                idx = np.where((zps["FIELD"]==tile))[0]
+                zp0 = zps[idx][filtername].data[0]
+                x0 = h["X0TILE"]
+                y0 = h["Y0TILE"]
+                zp = round(zp0 + zpcorr[filtername](x0, y0)[0][0], 5)
+                fits.setval(filename, "MAGZP", value=zp, comment=comment, ext=1)
 
 if __name__ == "__main__":
-    calibrate_FDS_LSB()
+    calibrate_samples()
