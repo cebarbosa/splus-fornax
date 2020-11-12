@@ -223,7 +223,7 @@ def make_sample_patricia():
         if not os.path.exists(_dir):
             os.mkdir(_dir)
     make_stamps_jype(names, coords, sizes, outdir=outdir)
-    
+
 if __name__ == "__main__":
     # make_stamps_fcc()
     # make_stamps_FDS_lsb()

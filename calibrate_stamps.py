@@ -36,14 +36,16 @@ def get_zp_correction():
     return zpcorr
 
 def calibrate_samples():
-    samples = ["FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS"]
+    samples = ["FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
     comment = "Magnitude zero point"
     zps = get_zps()
     zpcorr = get_zp_correction()
     for sample in samples:
         wdir = os.path.join(context.data_dir, sample, "cutouts")
+        if not os.path.exists(wdir):
+            continue
         galaxies = sorted(os.listdir(wdir))
-        desc = "Calibrating galaxies"
+        desc = "Calibrating galaxies of sample {}".format(sample)
         for galaxy in tqdm(galaxies, desc=desc):
             galdir = os.path.join(wdir, galaxy)
             stamps = sorted([_ for _ in os.listdir(galdir) if _.endswith(".fits")])
