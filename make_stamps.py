@@ -224,9 +224,34 @@ def make_sample_patricia():
             os.mkdir(_dir)
     make_stamps_jype(names, coords, sizes, outdir=outdir)
 
+def make_sample_smudges2():
+    catname = os.path.join(context.tables_dir, "DESI_UDGs_sorted_nodups.csv")
+    tab = Table.read(catname, format="ascii.csv")
+    misses_file = os.path.join(context.tables_dir, "misses")
+    with open(misses_file) as f:
+        data = f.readlines()
+    idxs = np.array([int(_.split(" ")[0].strip())-1 for _ in data])
+    goodidx = np.array([i for i in range(len(tab)) if i not in idxs])
+    tab = tab[goodidx][tab.colnames[1:]]
+    tab.rename_column("Filename_corr", "Name")
+    tab.rename_column("RA_corr", "RA")
+    tab.rename_column("dec_corr", "Dec")
+    tab.write(os.path.join(context.tables_dir, "SMUDGEs_sample.fits"),
+              overwrite=True)
+    names = [_.replace(" ", "") for _ in tab["Name"]]
+    coords = SkyCoord(tab["RA"], tab["Dec"], unit=u.degree)
+    sizes= (4 * tab["Rearcsec"].data * u.arcsec / context.ps).value
+    wdir = os.path.join(context.data_dir, "smudges2")
+    outdir = os.path.join(wdir, "cutouts")
+    for _dir in [wdir, outdir]:
+        if not os.path.exists(_dir):
+            os.mkdir(_dir)
+    make_stamps_jype(names, coords, sizes, outdir=outdir)
+
 if __name__ == "__main__":
     # make_stamps_fcc()
     # make_stamps_FDS_lsb()
     # make_stamps_11HUGS()
     # make_stamps_FDS_dwarfs_idr3()
-    make_sample_patricia()
+    # make_sample_patricia()
+    make_sample_smudges2()

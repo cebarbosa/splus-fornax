@@ -36,7 +36,7 @@ def get_zp_correction():
     return zpcorr
 
 def calibrate_samples():
-    samples = ["FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
+    samples = ["smudges2", "FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
     comment = "Magnitude zero point"
     zps = get_zps()
     zpcorr = get_zp_correction()
@@ -55,6 +55,8 @@ def calibrate_samples():
                 tile = h["TILE"]
                 filtername = h["FILTER"]
                 idx = np.where((zps["FIELD"]==tile))[0]
+                if len(idx) == 0:
+                    continue
                 zp0 = zps[idx][filtername].data[0]
                 x0 = h["X0TILE"]
                 y0 = h["Y0TILE"]
