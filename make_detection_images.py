@@ -34,32 +34,36 @@ def make_detection_img(filenames, outfile, bands=None):
     hdul.writeto(outfile, overwrite=True)
     return
 
-def make_detection_images_FDS_LSB():
-    wdir = os.path.join(context.data_dir, "FDS_LSB")
-    outdir = os.path.join(context.data_dir, "FDS_LSB_detection")
+def make_detection_images(survey, overwrite=False):
+    survey_dir =  os.path.join(context.data_dir, survey)
+    wdir = os.path.join(survey_dir, "scubes")
+    outdir = os.path.join(survey_dir, "detection")
     if not os.path.exists(outdir):
         os.mkdir(outdir)
     sample = os.listdir(wdir)
-    for galaxy in tqdm(sample, desc="Processing FDS LSB stamps"):
-        galdir = os.path.join(wdir, galaxy)
-        dims = set([_.split("_")[4] for _ in os.listdir(galdir)])
-        tiles = set([_.split("_")[2] for _ in os.listdir(galdir)])
-        for tile in tiles:
-            for dim in dims:
-                imgs = [os.path.join(galdir, "{}_{}_{}_{}_swp.fits".format(
-                    galaxy, tile, band, dim)) for band in context.bands]
-                if not all([os.path.exists(img) for img in imgs]):
-                    continue
-                outimg = os.path.join(outdir, "{}_{}_{}_swp.fits".format(
-                                       galaxy, tile, dim))
-                make_detection_img(imgs, outimg)
-                pngfile = os.path.join(outimg.replace(".fits", ".png"))
-                data = fits.getdata(outimg)
-                vmin = np.percentile(data, 80)
-                vmax = np.percentile(data, 95)
-                plt.imshow(data, origin="bottom", vmin=vmin, vmax=vmax)
-                plt.tight_layout()
-                plt.savefig(pngfile)
+    for scube in tqdm(sample, desc="Processing {}".format(survey)):
+        galid = "_".join(scube.split("_")[:-1])
+        output = os.path.join(outdir, scube.replace(".fits", ".png"))
+        if os.path.exists(output) and not overwrite:
+            continue
+        data = fits.getdata(os.path.join(wdir, scube), ext=0)
+        error = fits.getdata(os.path.join(wdir, scube), ext=1)
+        mask = np.where(data == 0)
+        data[mask] = np.nan
+        detection = np.nansum(data, axis=(0,))
+        deterr = np.sqrt(np.nansum(error**2, axis=(0,)))
+        sigma = detection / deterr
+        plt.imshow(gaussian_filter(sigma, 2), origin="lower", vmax=1, vmin=-1,
+                   cmap="Spectral")
+        plt.colorbar()
+        plt.title(galid.replace("_", "\_"))
+        plt.tight_layout()
+        plt.savefig(output, dpi=250)
+        plt.clf()
 
 if __name__ == "__main__":
-    make_detection_images_FDS_LSB()
+    np.seterr(divide='ignore', invalid='ignore')
+    surveys = ["smudges2", "patricia", "FDS_dwarfs", "FDS_LSB", "FCC", "11HUGS"]
+    surveys = ["jellyfish"]
+    for survey in surveys:
+        make_detection_images(survey, overwrite=False)
