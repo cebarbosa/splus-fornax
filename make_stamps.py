@@ -248,10 +248,24 @@ def make_sample_smudges2():
             os.mkdir(_dir)
     make_stamps_jype(names, coords, sizes, outdir=outdir)
 
+def make_sample_jellyfish():
+    names = ["NGC1427a", "NGC1437a"]
+    ras = ["03:40:9.3", "03:43:2.2"]
+    decs = ["-35:37:28", "-36:16:24"]
+    coords = SkyCoord(ras, decs, unit=(u.hourangle, u.degree))
+    sizes = 256
+    wdir = os.path.join(context.data_dir, "jellyfish")
+    outdir = os.path.join(wdir, "cutouts")
+    for _dir in [wdir, outdir]:
+        if not os.path.exists(_dir):
+            os.mkdir(_dir)
+    make_stamps_jype(names, coords, sizes, outdir=outdir)
+
 if __name__ == "__main__":
     # make_stamps_fcc()
     # make_stamps_FDS_lsb()
     # make_stamps_11HUGS()
     # make_stamps_FDS_dwarfs_idr3()
     # make_sample_patricia()
-    make_sample_smudges2()
+    # make_sample_smudges2()
+    make_sample_jellyfish()
