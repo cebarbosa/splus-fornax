@@ -111,6 +111,7 @@ if __name__ == "__main__":
     warnings.simplefilter('ignore', category=AstropyWarning)
     np.seterr(divide='ignore', invalid='ignore')
     surveys = ["smudges2", "FDS_dwarfs", "FDS_LSB", "patricia", "11HUGS", "FCC"]
+    surveys = ["jellyfish"]
     for survey in surveys:
         cutouts_dir = os.path.join(context.data_dir, survey, "cutouts")
         cubes_dir = os.path.join(context.data_dir, survey, "scubes")
