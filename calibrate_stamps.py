@@ -35,8 +35,8 @@ def get_zp_correction():
         zpcorr[band] = RectBivariateSpline(xgrid, xgrid, corr)
     return zpcorr
 
-def calibrate_samples():
-    samples = ["smudges2", "FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
+def calibrate_samples(samples):
+
     comment = "Magnitude zero point"
     zps = get_zps()
     zpcorr = get_zp_correction()
@@ -64,4 +64,6 @@ def calibrate_samples():
                 fits.setval(filename, "MAGZP", value=zp, comment=comment, ext=1)
 
 if __name__ == "__main__":
-    calibrate_samples()
+    samples = ["smudges2", "FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
+    samples = ["jellyfish"]
+    calibrate_samples(samples)
