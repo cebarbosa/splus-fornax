@@ -253,13 +253,40 @@ def make_sample_jellyfish():
     ras = ["03:40:9.3", "03:43:2.2"]
     decs = ["-35:37:28", "-36:16:24"]
     coords = SkyCoord(ras, decs, unit=(u.hourangle, u.degree))
-    sizes = 256
+    sizes = 516
     wdir = os.path.join(context.data_dir, "jellyfish")
     outdir = os.path.join(wdir, "cutouts")
     for _dir in [wdir, outdir]:
         if not os.path.exists(_dir):
             os.mkdir(_dir)
     make_stamps_jype(names, coords, sizes, outdir=outdir)
+
+def make_stamps_FDS_UDGs(n_res=6):
+    catname = os.path.join(context.tables_dir, "Venhola2017_FDS_LSB.dat")
+    with open(catname) as f:
+        data = f.readlines()
+    data = [_ for _ in data if not _.startswith("#")]
+    names = np.array([_[7:19].strip() for _ in data])
+    udg_names = ["FDS11_LSB17", "FDS12_LSB30", "FDS12_LSB3", "FDS11_LSB2",
+                 "FDS10_LSB25", "FDS12_LSB50", "FDS11_LSB1", "FDS16_LSB85",
+                 "FDS16_LSB58"]
+    idx = [list(names).index(name) for name in udg_names]
+    names = names[idx]
+    ras = np.array([float(_[22:30]) for _ in data])[idx] * u.degree
+    decs = np.array([float(_[31:38]) for _ in data])[idx] * u.degree
+    res = np.array([float(_[74:80]) for _ in data])[idx]
+    sizes = (np.floor(1 + 2 * n_res * res / context.ps.value)).astype(
+        np.int)
+    coords = SkyCoord(ras, decs)
+    table = Table([names, ras, decs, res], names=["Name", "RA", "Dec", "Re"])
+    wdir = os.path.join(context.data_dir, "FDS_UDGs")
+    if not os.path.exists(wdir):
+        os.mkdir(wdir)
+    outdir = os.path.join(wdir, "cutouts")
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
+    make_stamps_jype(names, coords, sizes, outdir=outdir, redo=True)
+
 
 if __name__ == "__main__":
     # make_stamps_fcc()
@@ -269,3 +296,4 @@ if __name__ == "__main__":
     # make_sample_patricia()
     # make_sample_smudges2()
     make_sample_jellyfish()
+    # make_stamps_FDS_UDGs()
