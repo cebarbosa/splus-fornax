@@ -16,6 +16,7 @@ import astropy.constants as const
 from astropy.io import fits
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from astropy.wcs import WCS
 from photutils import aperture_photometry, CircularAperture
 
 import context
@@ -53,7 +54,8 @@ def make_halpha_images(survey, overwrite=False):
     idx = [context.bands.index(band) for band in bands]
     for scube in tqdm(sample, desc="Processing {}".format(survey)):
         galid = "_".join(scube.split("_")[:-1])
-        output = os.path.join(outdir, "{}_detection.png".format(galid))
+        output = os.path.join(outdir, "halpha3F_{}.fits".format(galid))
+        outimg = output.replace(".fits", ".png")
         if os.path.exists(output) and not overwrite:
             continue
         cubefile = os.path.join(wdir, scube)
@@ -64,9 +66,21 @@ def make_halpha_images(survey, overwrite=False):
         halpha = halpha_estimator.flux_3F(flam)
         halpha_err = halpha_estimator.fluxerr_3F(flamerr)
         # Saving fits
-        # hdu1 = fits.ImageHDU(halpha)
-        # #
-        # # Saving
+        h = fits.getheader(cubefile)
+        w = WCS(h)
+        nw = WCS(naxis=2)
+        nw.wcs.cdelt= w.wcs.cdelt[:2]
+        nw.wcs.crval = w.wcs.crval[:2]
+        nw.wcs.crpix = w.wcs.crpix[:2]
+        nw.wcs.ctype[0] = w.wcs.ctype[0]
+        nw.wcs.ctype[1] = w.wcs.ctype[1]
+        nw.wcs.pc = w.wcs.pc[:2, :2]
+        h.update(nw.to_header())
+        hdu1 = fits.ImageHDU(halpha.value / bscale, h)
+        hdu2 = fits.ImageHDU(halpha_err.value / bscale, h)
+        hdulist = fits.HDUList([fits.PrimaryHDU(), hdu1, hdu2])
+        hdulist.writeto(output, overwrite=True)
+        # Making PNG image
         z = halpha.value
         extent = np.array([-z.shape[0]/2, z.shape[0]/2, -z.shape[1] / 2,
                            z.shape[1]/2]) * 0.55
@@ -81,8 +95,10 @@ def make_halpha_images(survey, overwrite=False):
         plt.xlabel("$\Delta$X (arcsec)")
         plt.ylabel("$\Delta$Y (arcsec)")
         plt.tight_layout()
-        plt.savefig(os.path.join(outdir, "halpha3F_{}.png".format(galid)))
+        plt.savefig(outimg)
+        # plt.show()
         plt.clf()
+        plt.close()
 
 if __name__ == "__main__":
     np.seterr(divide='ignore', invalid='ignore')
