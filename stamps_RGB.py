@@ -42,8 +42,8 @@ def make_stamp(rimg, gimg, bimg, outimg, bb=2.):
     return
 
 def make_stamps_FCC():
-    wdir = os.path.join(context.data_dir, "cutouts")
-    outdir = os.path.join(context.data_dir, "RGB")
+    wdir = os.path.join(context.data_dir, "FCC", "cutouts")
+    outdir = os.path.join(context.data_dir, "FCC", "RGB")
     if not os.path.exists(outdir):
         os.mkdir(outdir)
     for i in tqdm(range(350), desc="Processing FCC catalog"):

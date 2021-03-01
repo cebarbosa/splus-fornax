@@ -66,4 +66,5 @@ def calibrate_samples(samples):
 if __name__ == "__main__":
     samples = ["smudges2", "FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
     samples = ["jellyfish"]
+    # samples = ["FDS_UDGs"]
     calibrate_samples(samples)

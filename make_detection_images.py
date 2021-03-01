@@ -73,7 +73,7 @@ def make_detection_images(survey, overwrite=False, maxdim=1000):
                 sigma = detection / deterr
                 title = "galaxy: {}; field: {}".format(
                          galaxy.replace("_", " "), obsfield)
-                ydim, xdim = sigma.shape
+                ydim, xdim = sigma._shape
                 extent = np.array([-0.5 * xdim, 0.5 * xdim, -0.5 * ydim,
                                   0.5 * ydim]) * context.ps.value
                 plt.imshow(gaussian_filter(sigma, 1), origin="lower",
@@ -106,8 +106,8 @@ def make_detection_images(survey, overwrite=False, maxdim=1000):
 
 if __name__ == "__main__":
     np.seterr(divide='ignore', invalid='ignore')
-    surveys = ["FDS_LSB"]
+    surveys = ["jellyfish"]
     # surveys = ["smudges2", "patricia", "FDS_dwarfs", "FCC", \
-    #           "11HUGS", "jellyfish"]
+    #           "11HUGS", "jellyfish", "FDS_LSB", "FDS_UDGs"]
     for survey in surveys:
         make_detection_images(survey, overwrite=False)
