@@ -14,10 +14,16 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from astropy.io import fits
+from astropy.visualization import make_lupton_rgb
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from astropy.wcs import WCS
+from astropy.stats import sigma_clipped_stats
 from photutils import aperture_photometry, CircularAperture
+from skimage import color
+from scipy.ndimage.filters import gaussian_filter
+from PIL import Image
+import cv2
 
 import context
 from emlines_estimator import EmLine3Filters
@@ -38,23 +44,19 @@ def read_SPLUS_transmission_curves():
     trans =  dict(zip(filternames, trans))
     return wcurves, trans
 
-
-
-def make_halpha_images(survey, overwrite=False):
+def make_halpha_images(sample, overwrite=False):
     bands = ["R", "F660", "I"]
     wcurves, trans = read_SPLUS_transmission_curves()
     halpha_estimator = EmLine3Filters(6562.8 * u.AA, bands, wcurves, trans)
     bands = context.bands if bands is None else bands
-    survey_dir =  os.path.join(context.data_dir, survey)
+    survey_dir =  os.path.join(context.data_dir, sample)
     wdir = os.path.join(survey_dir, "scubes")
     outdir = os.path.join(survey_dir, "halpha_3F")
     if not os.path.exists(outdir):
         os.mkdir(outdir)
-    sample = os.listdir(wdir)
     idx = [context.bands.index(band) for band in bands]
-    for scube in tqdm(sample, desc="Processing {}".format(survey)):
-        galid = "_".join(scube.split("_")[:-1])
-        output = os.path.join(outdir, "halpha3F_{}.fits".format(galid))
+    for scube in tqdm(os.listdir(wdir), desc="Processing {}".format(sample)):
+        output = os.path.join(outdir, "halpha3F_{}".format(scube))
         outimg = output.replace(".fits", ".png")
         if os.path.exists(output) and not overwrite:
             continue
@@ -82,8 +84,8 @@ def make_halpha_images(survey, overwrite=False):
         hdulist.writeto(output, overwrite=True)
         # Making PNG image
         z = halpha.value
-        extent = np.array([-z.shape[0]/2, z.shape[0]/2, -z.shape[1] / 2,
-                           z.shape[1]/2]) * 0.55
+        extent = np.array([-z.shape[0] / 2, z.shape[0] / 2, -z.shape[1] / 2,
+                           z.shape[1] / 2]) * 0.55
         vmin = np.nanpercentile(z, 1)
         vmax = np.nanpercentile(z, 99)
         fig = plt.figure(figsize=(5.,4))
@@ -91,18 +93,65 @@ def make_halpha_images(survey, overwrite=False):
         im = ax.imshow(z, origin="lower", vmax=vmax, vmin=vmin, extent=extent)
         cbar = plt.colorbar(im)
         cbar.set_label("H$\\alpha$ (erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$)")
-        plt.title(galid.replace("_", "\_"))
+        plt.title(scube.replace("_", "\_"))
         plt.xlabel("$\Delta$X (arcsec)")
         plt.ylabel("$\Delta$Y (arcsec)")
         plt.tight_layout()
         plt.savefig(outimg)
-        # plt.show()
+        plt.show()
         plt.clf()
         plt.close()
 
+def make_overlay_RGB_halpha(sample):
+    """ Overlays an RGB image of the galaxies with H-alpha. """
+    survey_dir =  os.path.join(context.data_dir, sample)
+    halpha_dir = os.path.join(survey_dir, "halpha_3F")
+    cubes_dir = os.path.join(survey_dir, "scubes")
+    idx = [context.bands.index(band) for band in ["I", "R", "G"]]
+    bb = 5
+    desc = "Making RGB+halpha images of {} sample".format(sample)
+    for scube in tqdm(os.listdir(cubes_dir), desc=desc):
+        if not scube.startswith("FCC00")
+        cube = fits.getdata(os.path.join(cubes_dir, scube))
+        r = cube[idx[0]]
+        g = cube[idx[1]]
+        b = cube[idx[2]]
+        r[np.isnan(r)] = 0.
+        g[np.isnan(g)] = 0.
+        b[np.isnan(b)] - 0.
+        I = (b + g + r) / 3.
+        beta = np.nanmedian(I) * bb
+        R = r * np.arcsinh(I / beta) / I
+        G = g * np.arcsinh(I / beta) / I
+        B = b * np.arcsinh(I / beta) / I
+        maxRGB = np.percentile(np.stack([R, G, B]), 99.5)
+        R = np.clip(255 * R / maxRGB, 0, 255).astype("uint8")
+        G = np.clip(255 * G / maxRGB, 0., 255).astype("uint8")
+        B = np.clip(255 * B / maxRGB, 0, 255).astype("uint8")
+        RGB = np.stack([np.rot90(R, 3), np.rot90(G, 3),
+                        np.rot90(B, 3)]).T
+
+        # Make h-alpha image to be superposed
+        halpha_file = os.path.join(halpha_dir, "halpha3F_{}".format(scube))
+        halpha = fits.getdata(halpha_file)
+        mean, median, stddev = sigma_clipped_stats(halpha)
+        maxha = np.percentile(halpha, 99.5)
+        halpha = np.clip(halpha, 1 * stddev, maxha)
+        halpha -= halpha.min()
+        halpha = (halpha / halpha.max() * 255).astype("uint8")
+
+        hamask = np.zeros_like(RGB)
+        hamask[:, :, 0] = np.rot90(halpha, 3).T
+        # Overlay images
+        out = Image.fromarray(cv2.addWeighted(RGB, 0.7, hamask, 0.5, 0))
+        outimg = os.path.join(halpha_dir, "RGB+halpha_{}".format(
+            scube.replace(".fits", ".png")))
+        out.save(outimg)
+
 if __name__ == "__main__":
     np.seterr(divide='ignore', invalid='ignore')
-    surveys = ["jellyfish", "FCC", "FDS_dwarfs", "smudges2", "patricia",
+    samples = ["FCC", "jellyfish", "FDS_dwarfs", "smudges2", "patricia",
                "FDS_LSB", "11HUGS"]
-    for survey in surveys:
-        make_halpha_images(survey)
+    for sample in samples:
+        make_halpha_images(sample)
+        make_overlay_RGB_halpha(sample)
