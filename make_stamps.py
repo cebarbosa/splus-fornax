@@ -13,6 +13,7 @@ from __future__ import print_function, division
 
 import os
 import warnings
+from getpass import getpass
 
 import numpy as np
 import astropy.units as u
@@ -23,6 +24,7 @@ from astropy.wcs import WCS
 from astropy.nddata.utils import Cutout2D
 from tqdm import tqdm
 from astropy.wcs import FITSFixedWarning
+import splusdata
 
 import context
 
@@ -249,9 +251,9 @@ def make_sample_smudges2():
     make_stamps_jype(names, coords, sizes, outdir=outdir)
 
 def make_sample_jellyfish():
-    names = ["NGC1427a", "NGC1437a"]
-    ras = ["03:40:9.3", "03:43:2.2"]
-    decs = ["-35:37:28", "-36:16:24"]
+    names = ["NGC1427a", "NGC1437a", "NGC1209", "NGC3312"]
+    ras = ["03:40:9.3", "03:43:2.2", "03:06:03.0", "10:37:02.5s"]
+    decs = ["-35:37:28", "-36:16:24", "-15:36:41", "-27:33:54s"]
     coords = SkyCoord(ras, decs, unit=(u.hourangle, u.degree))
     sizes = 516
     wdir = os.path.join(context.data_dir, "jellyfish")
@@ -287,6 +289,44 @@ def make_stamps_FDS_UDGs(n_res=6):
         os.mkdir(outdir)
     make_stamps_jype(names, coords, sizes, outdir=outdir, redo=True)
 
+def make_stamps_interacting_galaxies():
+    names = ["AM1054-325", "AM1025-433", "AM0453-372", "AM0155-691",
+             "NGC1209", "NGC3312"]
+    ras = [164.2423, 156.963624, 73.72375, 29.210415, 46.5125, 159.26041]
+    decs = [-33.16453, -43.903748, -37.321722, -68.995255, -15.61139, -27.5650]
+    sizes = [516] * len(names)
+    wdir = os.path.join(context.data_dir, "interacting_galaxies")
+    outdir = os.path.join(wdir, "cutouts")
+    for _dir in [wdir, outdir]:
+        if not os.path.exists(_dir):
+            os.mkdir(_dir)
+    credentials_file = "./credentials.txt"
+    if os.path.exists(credentials_file):
+        with open(credentials_file) as f:
+            fields = f.readlines()
+        conn = splusdata.connect(fields[0], fields[1])  ## from splus.cloud
+    else:
+        print("Access to S-PLUS data requires authentication.")
+        user = input("login: ")
+        password = getpass()
+        conn = splusdata.connect(user, password) ## from splus.cloud
+    conn.get_tap_tables()
+    desc = "Getting cutouts for sample"
+    for i in tqdm(range(len(names))):
+        gal_dir = os.path.join(outdir, names[i])
+        if not os.path.exists(gal_dir):
+            os.mkdir(gal_dir)
+        for band in context.bands:
+            cutout = conn.get_cut(ras[i], decs[i], sizes[i], band)
+
+            header = cutout[1].header
+            data = cutout[1].data
+            imgname = "{0}_{1}_{2}_{3}x{3}_swp.fits".format(names[i],
+                      header["object"].replace("_", "-"), band, sizes[i])
+            hdu = fits.ImageHDU(data=data, header=header)
+            hdulist = fits.HDUList([fits.PrimaryHDU(), hdu])
+            hdulist.writeto(os.path.join(gal_dir, imgname), overwrite=True)
+
 
 if __name__ == "__main__":
     # make_stamps_fcc()
@@ -295,5 +335,6 @@ if __name__ == "__main__":
     # make_stamps_FDS_dwarfs_idr3()
     # make_sample_patricia()
     # make_sample_smudges2()
-    make_sample_jellyfish()
+    # make_sample_jellyfish()
     # make_stamps_FDS_UDGs()
+    make_stamps_interacting_galaxies()

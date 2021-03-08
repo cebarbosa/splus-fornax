@@ -35,8 +35,7 @@ def get_zp_correction():
         zpcorr[band] = RectBivariateSpline(xgrid, xgrid, corr)
     return zpcorr
 
-def calibrate_samples(samples):
-
+def calibrate_samples(samples, tile_key="TILE", xycorr=True):
     comment = "Magnitude zero point"
     zps = get_zps()
     zpcorr = get_zp_correction()
@@ -52,19 +51,23 @@ def calibrate_samples(samples):
             for stamp in stamps:
                 filename = os.path.join(galdir, stamp)
                 h = fits.getheader(filename, ext=1)
-                tile = h["TILE"]
+                tile = h[tile_key]
                 filtername = h["FILTER"]
                 idx = np.where((zps["FIELD"]==tile))[0]
                 if len(idx) == 0:
+                    print(tile)
                     continue
-                zp0 = zps[idx][filtername].data[0]
-                x0 = h["X0TILE"]
-                y0 = h["Y0TILE"]
-                zp = round(zp0 + zpcorr[filtername](x0, y0)[0][0], 5)
+                zp = round(zps[idx][filtername].data[0])
+                if xycorr:
+                    x0 = h["X0TILE"]
+                    y0 = h["Y0TILE"]
+                    zp += round(zpcorr[filtername](x0, y0)[0][0], 5)
                 fits.setval(filename, "MAGZP", value=zp, comment=comment, ext=1)
 
 if __name__ == "__main__":
     samples = ["smudges2", "FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
     samples = ["jellyfish"]
-    # samples = ["FDS_UDGs"]
-    calibrate_samples(samples)
+    samples = ["FDS_UDGs"]
+    # calibrate_samples(samples)
+    samples = ["interacting_galaxies"]
+    calibrate_samples(samples, tile_key="OBJECT", xycorr=False)

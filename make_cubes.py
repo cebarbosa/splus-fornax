@@ -52,8 +52,7 @@ def make_cubes(indir, outdir, redo=False, bands=None, bscale=1e-19):
         # Checking if weight images are available
         wimgs = [os.path.join(indir, "{}_{}_{}_{}_swpweight.fits".format(
                  galaxy, field,  band, size)) for band in bands]
-        if not all([os.path.exists(_) for _ in wimgs]):
-            continue
+        has_errs = all([os.path.exists(_) for _ in wimgs])
         # Making new header with WCS
         h = headers[0].copy()
         del h["FILTER"]
@@ -65,21 +64,25 @@ def make_cubes(indir, outdir, redo=False, bands=None, bscale=1e-19):
         nw.wcs.crpix[:2] = w.wcs.crpix
         nw.wcs.ctype[0] = w.wcs.ctype[0]
         nw.wcs.ctype[1] = w.wcs.ctype[1]
-        nw.wcs.pc[:2, :2] = w.wcs.pc
+        try:
+            nw.wcs.pc[:2, :2] = w.wcs.pc
+        except:
+            pass
         h.update(nw.to_header())
         # Performin calibration
         m0 = np.array([h["MAGZP"] for h in headers])
         gain = np.array([h["GAIN"] for h in headers])
         f0 = np.power(10, -0.4 * (48.6 + m0))
         data = np.array([fits.getdata(img, 1) for img in imgs])
-        weights = np.array([fits.getdata(img, 1) for img in wimgs])
-        dataerr = 1 / weights + np.clip(data, 0, np.infty) / gain[:, None, None]
         fnu = data * f0[:, None, None] * fnu_unit
-        fnuerr= dataerr * f0[:, None, None] * fnu_unit
         flam = fnu * const.c / wave[:, None, None]**2
-        flamerr = fnuerr * const.c / wave[:, None, None] ** 2
         flam = flam.to(flam_unit).value / bscale
-        flamerr = flamerr.to(flam_unit).value / bscale
+        if has_errs:
+            weights = np.array([fits.getdata(img, 1) for img in wimgs])
+            dataerr = 1 / weights + np.clip(data, 0, np.infty) / gain[:, None, None]
+            fnuerr= dataerr * f0[:, None, None] * fnu_unit
+            flamerr = fnuerr * const.c / wave[:, None, None] ** 2
+            flamerr = flamerr.to(flam_unit).value / bscale
         # Making table with metadata
         tab = []
         tab.append(bands)
@@ -93,18 +96,23 @@ def make_cubes(indir, outdir, redo=False, bands=None, bscale=1e-19):
             names.append(f)
         tab = Table(tab, names=names)
         # Producing data cubes HDUs.
+        hdus = [fits.PrimaryHDU()]
         hdu1 = fits.ImageHDU(flam, h)
         hdu1.header["EXTNAME"] = ("DATA", "Name of the extension")
-        hdu2 = fits.ImageHDU(flamerr, h)
-        hdu2.header["EXTNAME"] = ("ERRORS", "Name of the extension")
-        for hdu in [hdu1, hdu2]:
+        hdus.append(hdu1)
+        if has_errs:
+            hdu2 = fits.ImageHDU(flamerr, h)
+            hdu2.header["EXTNAME"] = ("ERRORS", "Name of the extension")
+            hdus.append(hdu2)
+        for hdu in hdus:
             hdu.header["BSCALE"] = (bscale, "Linear factor in scaling equation")
             hdu.header["BZERO"] = (0, "Zero point in scaling equation")
             hdu.header["BUNIT"] = ("{}".format(flam_unit),
                                    "Physical units of the array values")
         thdu = fits.BinTableHDU(tab)
+        hdus.append(thdu)
         thdu.header["EXTNAME"] = "METADATA"
-        hdulist = fits.HDUList([fits.PrimaryHDU(), hdu1, hdu2, thdu])
+        hdulist = fits.HDUList(hdus)
         hdulist.writeto(cubename, overwrite=True)
 
 if __name__ == "__main__":
@@ -112,7 +120,7 @@ if __name__ == "__main__":
     np.seterr(divide='ignore', invalid='ignore')
     surveys = ["smudges2", "FDS_dwarfs", "FDS_LSB", "patricia", "11HUGS",
                "FCC", "jellyfish", "FDS_UDGs"]
-    surveys = ["jellyfish"]
+    surveys = ["interacting_galaxies"]
     for survey in surveys:
         cutouts_dir = os.path.join(context.data_dir, survey, "cutouts")
         cubes_dir = os.path.join(context.data_dir, survey, "scubes")

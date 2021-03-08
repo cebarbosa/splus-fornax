@@ -76,7 +76,10 @@ def make_halpha_images(sample, overwrite=False):
         nw.wcs.crpix = w.wcs.crpix[:2]
         nw.wcs.ctype[0] = w.wcs.ctype[0]
         nw.wcs.ctype[1] = w.wcs.ctype[1]
-        nw.wcs.pc = w.wcs.pc[:2, :2]
+        try:
+            nw.wcs.pc = w.wcs.pc[:2, :2]
+        except:
+            pass
         h.update(nw.to_header())
         hdu1 = fits.ImageHDU(halpha.value / bscale, h)
         hdu2 = fits.ImageHDU(halpha_err.value / bscale, h)
@@ -92,13 +95,13 @@ def make_halpha_images(sample, overwrite=False):
         ax = plt.subplot(111)
         im = ax.imshow(z, origin="lower", vmax=vmax, vmin=vmin, extent=extent)
         cbar = plt.colorbar(im)
-        cbar.set_label("H$\\alpha$ (erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$)")
+        cbar.set_label("H$\\alpha$ (erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$)")
         plt.title(scube.replace("_", "\_"))
         plt.xlabel("$\Delta$X (arcsec)")
         plt.ylabel("$\Delta$Y (arcsec)")
         plt.tight_layout()
         plt.savefig(outimg)
-        plt.show()
+        # plt.show()
         plt.clf()
         plt.close()
 
@@ -107,11 +110,11 @@ def make_overlay_RGB_halpha(sample):
     survey_dir =  os.path.join(context.data_dir, sample)
     halpha_dir = os.path.join(survey_dir, "halpha_3F")
     cubes_dir = os.path.join(survey_dir, "scubes")
+    out_dir = os.path.join(survey_dir, "RGB+halpha")
     idx = [context.bands.index(band) for band in ["I", "R", "G"]]
     bb = 5
     desc = "Making RGB+halpha images of {} sample".format(sample)
     for scube in tqdm(os.listdir(cubes_dir), desc=desc):
-        if not scube.startswith("FCC00")
         cube = fits.getdata(os.path.join(cubes_dir, scube))
         r = cube[idx[0]]
         g = cube[idx[1]]
@@ -143,8 +146,8 @@ def make_overlay_RGB_halpha(sample):
         hamask = np.zeros_like(RGB)
         hamask[:, :, 0] = np.rot90(halpha, 3).T
         # Overlay images
-        out = Image.fromarray(cv2.addWeighted(RGB, 0.7, hamask, 0.5, 0))
-        outimg = os.path.join(halpha_dir, "RGB+halpha_{}".format(
+        out = Image.fromarray(cv2.addWeighted(RGB, 0.9, hamask, 0.4, 0))
+        outimg = os.path.join(out_dir, "RGB+halpha_{}".format(
             scube.replace(".fits", ".png")))
         out.save(outimg)
 
@@ -152,6 +155,8 @@ if __name__ == "__main__":
     np.seterr(divide='ignore', invalid='ignore')
     samples = ["FCC", "jellyfish", "FDS_dwarfs", "smudges2", "patricia",
                "FDS_LSB", "11HUGS"]
+    samples = ["interacting_galaxies"]
+    samples = ["FDS_UDGs"]
     for sample in samples:
         make_halpha_images(sample)
         make_overlay_RGB_halpha(sample)
