@@ -57,17 +57,18 @@ def calibrate_samples(samples, tile_key="TILE", xycorr=True):
                 if len(idx) == 0:
                     print(tile)
                     continue
-                zp = round(zps[idx][filtername].data[0])
+                zp = float(zps[idx][filtername].data[0])
                 if xycorr:
                     x0 = h["X0TILE"]
                     y0 = h["Y0TILE"]
-                    zp += round(zpcorr[filtername](x0, y0)[0][0], 5)
-                fits.setval(filename, "MAGZP", value=zp, comment=comment, ext=1)
+                    zp += float(zpcorr[filtername](x0, y0)[0][0])
+                fits.setval(filename, "MAGZP", value=round(zp, 7),
+                            comment=comment, ext=1)
 
 if __name__ == "__main__":
     samples = ["smudges2", "FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
-    samples = ["jellyfish"]
-    samples = ["FDS_UDGs"]
-    # calibrate_samples(samples)
+    samples += ["jellyfish"]
+    samples += ["FDS_UDGs"]
+    calibrate_samples(samples)
     samples = ["interacting_galaxies"]
     calibrate_samples(samples, tile_key="OBJECT", xycorr=False)
