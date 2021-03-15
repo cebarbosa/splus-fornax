@@ -55,7 +55,7 @@ def calibrate_samples(samples, tile_key="TILE", xycorr=True):
                 filtername = h["FILTER"]
                 idx = np.where((zps["FIELD"]==tile))[0]
                 if len(idx) == 0:
-                    print(tile)
+                    print("Calibration not found for tile: {}".format(tile))
                     continue
                 zp = float(zps[idx][filtername].data[0])
                 if xycorr:
