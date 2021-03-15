@@ -34,8 +34,6 @@ def query_size(gal):
             units = [_ for _ in diam["Major Axis Unit"].data]
         except:
             units = [_.decode() for _ in diam["Major Axis Unit"].data]
-
-
         idx = [i for i, un in enumerate(units) if un in
                ["arcmin", "arcsec", "degree"]]
         if len(idx) > 0:
@@ -65,7 +63,6 @@ def get_fcc_diameters():
 def get_GCs_diameters():
     """ Diameters of GC galaxies. """
     catalog = Table.read(os.path.join(context.tables_dir, "sample_GCs.csv"))
-    results = []
     sizes = []
     for gal in tqdm(catalog, desc="Querying galaxies with GC catalogs"):
         sizes.append(query_size(gal["galaxy"]))
@@ -76,5 +73,5 @@ def get_GCs_diameters():
                   overwrite=True)
 
 if __name__ == "__main__":
-    # get_fcc_diameters()
+    get_fcc_diameters()
     get_GCs_diameters()
