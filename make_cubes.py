@@ -120,7 +120,7 @@ if __name__ == "__main__":
     np.seterr(divide='ignore', invalid='ignore')
     surveys = ["smudges2", "FDS_dwarfs", "FDS_LSB", "patricia", "11HUGS",
                "FCC", "jellyfish", "FDS_UDGs"]
-    surveys = ["interacting_galaxies"]
+    surveys += ["interacting_galaxies"]
     for survey in surveys:
         cutouts_dir = os.path.join(context.data_dir, survey, "cutouts")
         cubes_dir = os.path.join(context.data_dir, survey, "scubes")

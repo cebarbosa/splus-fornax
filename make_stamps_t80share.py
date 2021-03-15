@@ -81,6 +81,7 @@ def make_stamps_t80share(names, coords, sizes, outdir=None, redo=False,
         field_coords = SkyCoord(field["RA"], field["DEC"],
                                 unit=(u.hourangle, u.degree))
         field_name = field["NAME"]
+        tile_dir = os.path.join(tiles_dir, field["NAME"])
         d2d = coords.separation(field_coords)
         idx = np.where(d2d < 2 * u.degree)[0]
         fnames = names[idx]
@@ -89,7 +90,7 @@ def make_stamps_t80share(names, coords, sizes, outdir=None, redo=False,
         for img_type in tqdm(img_types, desc="Data types", leave=False,
                              position=1):
             for band in tqdm(bands, desc="Bands", leave=False, position=2):
-                tile_dir = os.path.join(tiles_dir, field["NAME"], band)
+
                 fitsfile = os.path.join(tile_dir, "{}_{}_{}.fits".format(
                                          field["NAME"], band, img_type))
                 fzfile = fitsfile.replace(".fits", ".fz")
@@ -153,5 +154,9 @@ def make_stamps_GCs():
     coords = SkyCoord(ras, decs, unit=(u.degree, u.degree))
     make_stamps_t80share(names, coords, sizes, outdir=outdir)
 
+def make_stamps_fornax():
+
+
 if __name__ == "__main__":
     make_stamps_GCs()
+    # make_stamps_fornax()
