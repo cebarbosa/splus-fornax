@@ -144,7 +144,7 @@ def make_stamps_GCs():
     ras =  np.array([ _ for _ in catalog["ra"]])
     decs = np.array([ _ for _ in catalog["dec"]])
     wdir = os.path.join(context.data_dir, "GCs")
-    outdir = os.path.join(wdir, "cutouts")
+    outdir = os.path.join(context.data_dir, wdir, "cutouts")
     for _dir in [wdir, outdir]:
         if not os.path.exists(_dir):
             os.mkdir(_dir)
