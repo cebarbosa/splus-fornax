@@ -155,6 +155,7 @@ def make_stamps_GCs():
     make_stamps_t80share(names, coords, sizes, outdir=outdir)
 
 def make_stamps_fornax():
+    pass
 
 
 if __name__ == "__main__":
