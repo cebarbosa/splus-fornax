@@ -20,7 +20,7 @@ from astropy.wcs import FITSFixedWarning
 import context
 
 def make_stamps_t80share(names, coords, sizes, outdir=None, redo=False,
-                     img_types=None, bands=None):
+                     img_types=None, bands=None, tiles_dir=None):
     """  Produces stamps of objects in S-PLUS from a table of names,
     coordinates.
 
@@ -61,7 +61,8 @@ def make_stamps_t80share(names, coords, sizes, outdir=None, redo=False,
     sizes = sizes.astype(np.int)
     img_types = ["swp", "swpweight"] if img_types is None else img_types
     outdir = os.getcwd() if outdir is None else outdir
-    tiles_dir = "/storage/share/all_coadded/"
+    tiles_dir = "/storage/share/all_coadded/" if tiles_dir is None else \
+        tiles_dir
     header_keys = ["OBJECT", "FILTER", "EXPTIME", "GAIN", "TELESCOP",
                    "INSTRUME", "AIRMASS"]
     bands = context.bands if bands is None else bands
@@ -91,12 +92,18 @@ def make_stamps_t80share(names, coords, sizes, outdir=None, redo=False,
                 tile_dir = os.path.join(tiles_dir, field["NAME"], band)
                 fitsfile = os.path.join(tile_dir, "{}_{}_{}.fits".format(
                                          field["NAME"], band, img_type))
-                if not os.path.exists(fitsfile):
+                fzfile = fitsfile.replace(".fits", ".fz")
+                if os.path.exists(fitsfile):
+                    header = fits.getheader(fitsfile)
+                    data = fits.getdata(fitsfile)
+                elif os.path.exists(fzfile):
+                    f = fits.open(fzfile)[1]
+                    header = f.header
+                    data = f.data
+                else:
                     continue
-                header = fits.getheader(fitsfile)
                 wcs = WCS(header)
                 xys = wcs.all_world2pix(fcoords.ra, fcoords.dec, 1)
-                data = fits.getdata(fitsfile)
                 for i, (name, size) in enumerate(tqdm(zip(fnames, fsizes),
                                      desc="Galaxies", leave=False, position=3)):
                     galdir = os.path.join(outdir, name)
