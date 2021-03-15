@@ -17,6 +17,8 @@ if platform.node() in ["t80s-jype2", "t80s-jype"]:
     home_dir = "/mnt/public/kadu/fornax"
 elif platform.node() in ["kadu-Inspiron-5557"]:
     home_dir = "/home/kadu/Dropbox/SPLUS/fornax"
+elif platform.node() == "hydra":
+    home_dir = "/storage/share/kadu/fornax"
 
 data_dir = os.path.join(home_dir, "data")
 tables_dir = os.path.join(home_dir, "tables")
