@@ -130,7 +130,8 @@ def make_stamps_jype(names, coords, sizes, outdir=None, redo=False,
                     hdu.header["TILE"] = hdu.header["OBJECT"]
                     hdu.header["OBJECT"] = name
                     if "HIERARCH OAJ PRO FWHMMEAN" in header:
-                        hdu.header["PSFFWHM"] = header["HIERARCH OAJ PRO FWHMMEAN"]
+                        hdu.header["PSFFWHM"] = header["HIERARCH OAJ " \
+                                                       "PRO FWHMMEAN"]
                     hdu.header["X0TILE"] = (xys[0][i], "Location in tile")
                     hdu.header["Y0TILE"] = (xys[1][i], "Location in tile")
                     hdu.header.update(cutout.wcs.to_header())
@@ -338,3 +339,4 @@ if __name__ == "__main__":
     # make_sample_jellyfish()
     # make_stamps_FDS_UDGs()
     make_stamps_interacting_galaxies()
+    make_stamps_
