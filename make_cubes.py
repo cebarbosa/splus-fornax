@@ -118,12 +118,20 @@ def make_cubes(indir, outdir, redo=False, bands=None, bscale=1e-19):
 if __name__ == "__main__":
     warnings.simplefilter('ignore', category=AstropyWarning)
     np.seterr(divide='ignore', invalid='ignore')
-    surveys = ["smudges2", "FDS_dwarfs", "FDS_LSB", "patricia", "11HUGS",
-               "FCC", "jellyfish", "FDS_UDGs"]
+    surveys = []
+    # surveys += ["patricia", "11HUGS"]
+    # surveys += ["smudges2", "FDS_dwarfs"]
+    surveys += ["FCC", "jellyfish", "FDS_UDGs"]
     surveys += ["interacting_galaxies"]
+    surveys += ["sample_gc_galaxies"]
+    # surveys += ["FDS_LSB"]
     for survey in surveys:
-        cutouts_dir = os.path.join(context.data_dir, survey, "cutouts")
-        cubes_dir = os.path.join(context.data_dir, survey, "scubes")
+        data_dir = "/home/kadu/Dropbox/splus-halpha/data" if survey == "FCC" \
+            else context.data_dir
+        cutouts_dir = os.path.join(data_dir, survey, "cutouts")
+        cubes_dir = os.path.join(data_dir, survey, "scubes")
+        if survey == "FCC":
+            cutouts_dir
         if not os.path.exists(cubes_dir):
             os.mkdir(cubes_dir)
         galaxies = sorted(os.listdir(cutouts_dir))

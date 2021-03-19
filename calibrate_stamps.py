@@ -69,6 +69,7 @@ if __name__ == "__main__":
     samples = ["smudges2", "FCC", "FDS_dwarfs", "FDS_LSB", "11HUGS", "patricia"]
     samples += ["jellyfish"]
     samples += ["FDS_UDGs"]
+    samples += ["sample_gc_galaxies"]
     calibrate_samples(samples)
     samples = ["interacting_galaxies"]
     calibrate_samples(samples, tile_key="OBJECT", xycorr=False)

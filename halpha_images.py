@@ -44,12 +44,13 @@ def read_SPLUS_transmission_curves():
     trans =  dict(zip(filternames, trans))
     return wcurves, trans
 
-def make_halpha_images(sample, overwrite=False):
+def make_halpha_images(sample, overwrite=False, data_dir=None):
     bands = ["R", "F660", "I"]
     wcurves, trans = read_SPLUS_transmission_curves()
     halpha_estimator = EmLine3Filters(6562.8 * u.AA, bands, wcurves, trans)
     bands = context.bands if bands is None else bands
-    survey_dir =  os.path.join(context.data_dir, sample)
+    data_dir = context.data_dir if data_dir is None else data_dir
+    survey_dir =  os.path.join(data_dir, sample)
     wdir = os.path.join(survey_dir, "scubes")
     outdir = os.path.join(survey_dir, "halpha_3F")
     if not os.path.exists(outdir):
@@ -105,12 +106,15 @@ def make_halpha_images(sample, overwrite=False):
         plt.clf()
         plt.close()
 
-def make_overlay_RGB_halpha(sample):
+def make_overlay_RGB_halpha(sample, data_dir=None):
     """ Overlays an RGB image of the galaxies with H-alpha. """
+    data_dir = context.data_dir if data_dir is None else data_dir
     survey_dir =  os.path.join(context.data_dir, sample)
     halpha_dir = os.path.join(survey_dir, "halpha_3F")
     cubes_dir = os.path.join(survey_dir, "scubes")
     out_dir = os.path.join(survey_dir, "RGB+halpha")
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
     idx = [context.bands.index(band) for band in ["I", "R", "G"]]
     bb = 5
     desc = "Making RGB+halpha images of {} sample".format(sample)
@@ -154,9 +158,13 @@ def make_overlay_RGB_halpha(sample):
 if __name__ == "__main__":
     np.seterr(divide='ignore', invalid='ignore')
     samples = ["FCC", "jellyfish", "FDS_dwarfs", "smudges2", "patricia",
-               "FDS_LSB", "11HUGS"]
-    samples = ["interacting_galaxies"]
-    samples = ["FDS_UDGs"]
+               "11HUGS"]
+    samples += ["interacting_galaxies"]
+    samples += ["FDS_UDGs"]
+    samples += ["sample_gc_galaxies"]
+    # samples += ["FDS_LSB"]
     for sample in samples:
-        make_halpha_images(sample)
-        make_overlay_RGB_halpha(sample)
+        data_dir = "/home/kadu/Dropbox/splus-halpha/data" if sample=="FCC" \
+            else None
+        make_halpha_images(sample, data_dir=data_dir, overwrite=True)
+        make_overlay_RGB_halpha(sample, data_dir=data_dir)

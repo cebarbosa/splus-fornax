@@ -144,7 +144,7 @@ def make_stamps_GCs():
                       in catalog["galaxy"]])
     ras =  np.array([ _ for _ in catalog["ra"]])
     decs = np.array([ _ for _ in catalog["dec"]])
-    wdir = os.path.join(context.data_dir, "GCs")
+    wdir = os.path.join(context.data_dir, "sample_gc_galaxies")
     outdir = os.path.join(context.data_dir, wdir, "cutouts")
     for _dir in [wdir, outdir]:
         if not os.path.exists(_dir):
