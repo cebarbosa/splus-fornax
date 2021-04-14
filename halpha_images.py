@@ -12,16 +12,11 @@ import os
 
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
 from astropy.io import fits
-from astropy.visualization import make_lupton_rgb
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from astropy.wcs import WCS
 from astropy.stats import sigma_clipped_stats
-from photutils import aperture_photometry, CircularAperture
-from skimage import color
-from scipy.ndimage.filters import gaussian_filter
 from PIL import Image
 import cv2
 
@@ -56,7 +51,8 @@ def make_halpha_images(sample, overwrite=False, data_dir=None):
     if not os.path.exists(outdir):
         os.mkdir(outdir)
     idx = [context.bands.index(band) for band in bands]
-    for scube in tqdm(os.listdir(wdir), desc="Processing {}".format(sample)):
+    scubes = os.listdir(wdir)
+    for scube in tqdm(scubes, desc="Processing {}".format(sample)):
         output = os.path.join(outdir, "halpha3F_{}".format(scube))
         outimg = output.replace(".fits", ".png")
         if os.path.exists(output) and not overwrite:
@@ -69,7 +65,7 @@ def make_halpha_images(sample, overwrite=False, data_dir=None):
         halpha = halpha_estimator.flux_3F(flam)
         halpha_err = halpha_estimator.fluxerr_3F(flamerr)
         # Saving fits
-        h = fits.getheader(cubefile)
+        h = fits.getheader(cubefile, ext=1)
         w = WCS(h)
         nw = WCS(naxis=2)
         nw.wcs.cdelt= w.wcs.cdelt[:2]
@@ -86,25 +82,25 @@ def make_halpha_images(sample, overwrite=False, data_dir=None):
         hdu2 = fits.ImageHDU(halpha_err.value / bscale, h)
         hdulist = fits.HDUList([fits.PrimaryHDU(), hdu1, hdu2])
         hdulist.writeto(output, overwrite=True)
-        # Making PNG image
-        z = halpha.value
-        extent = np.array([-z.shape[0] / 2, z.shape[0] / 2, -z.shape[1] / 2,
-                           z.shape[1] / 2]) * 0.55
-        vmin = np.nanpercentile(z, 1)
-        vmax = np.nanpercentile(z, 99)
-        fig = plt.figure(figsize=(5.,4))
-        ax = plt.subplot(111)
-        im = ax.imshow(z, origin="lower", vmax=vmax, vmin=vmin, extent=extent)
-        cbar = plt.colorbar(im)
-        cbar.set_label("H$\\alpha$ (erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$)")
-        plt.title(scube.replace("_", "\_"))
-        plt.xlabel("$\Delta$X (arcsec)")
-        plt.ylabel("$\Delta$Y (arcsec)")
-        plt.tight_layout()
-        plt.savefig(outimg)
-        # plt.show()
-        plt.clf()
-        plt.close()
+        # # Making PNG image
+        # z = halpha.value
+        # extent = np.array([-z.shape[0] / 2, z.shape[0] / 2, -z.shape[1] / 2,
+        #                    z.shape[1] / 2]) * 0.55
+        # vmin = np.nanpercentile(z, 1)
+        # vmax = np.nanpercentile(z, 99)
+        # fig = plt.figure(figsize=(5.,4))
+        # ax = plt.subplot(111)
+        # im = ax.imshow(z, origin="lower", vmax=vmax, vmin=vmin, extent=extent)
+        # cbar = plt.colorbar(im)
+        # cbar.set_label("H$\\alpha$ (erg s$^{-1}$ cm$^{-2}$ \AA$^{-1}$)")
+        # plt.title(scube.replace("_", "\_"))
+        # plt.xlabel("$\Delta$X (arcsec)")
+        # plt.ylabel("$\Delta$Y (arcsec)")
+        # plt.tight_layout()
+        # plt.savefig(outimg)
+        # # plt.show()
+        # plt.clf()
+        # plt.close()
 
 def make_overlay_RGB_halpha(sample, data_dir=None):
     """ Overlays an RGB image of the galaxies with H-alpha. """
@@ -167,4 +163,4 @@ if __name__ == "__main__":
         data_dir = "/home/kadu/Dropbox/splus-halpha/data" if sample=="FCC" \
             else None
         make_halpha_images(sample, data_dir=data_dir, overwrite=True)
-        make_overlay_RGB_halpha(sample, data_dir=data_dir)
+        # make_overlay_RGB_halpha(sample, data_dir=data_dir)

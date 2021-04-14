@@ -125,6 +125,7 @@ if __name__ == "__main__":
     surveys += ["interacting_galaxies"]
     surveys += ["sample_gc_galaxies"]
     # surveys += ["FDS_LSB"]
+    surveys = ["FCC"]
     for survey in surveys:
         data_dir = "/home/kadu/Dropbox/splus-halpha/data" if survey == "FCC" \
             else context.data_dir

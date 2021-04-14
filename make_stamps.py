@@ -339,4 +339,3 @@ if __name__ == "__main__":
     # make_sample_jellyfish()
     # make_stamps_FDS_UDGs()
     make_stamps_interacting_galaxies()
-    make_stamps_
